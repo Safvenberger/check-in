@@ -8,13 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --dark:      #005073;
-      --accent:    #91CFC9;
-      --highlight: #FFE25D;
-      --bg:        #D7BFA8;
-      --light:     #EBDFD3;
-      --gray:      #7A8899;
-      --white:     #FFFFFF;
+      --dark:      #005073;  /* Blå — header, knappar, text */
+      --accent:    #91CFC9;  /* Grön — progress bars, slider, borders */
+      --highlight: #FFE25D;  /* Gul — medaljer, topp 1, accenter */
+      --bg:        #F0F0F0;  /* Ljusgrå — sidans bakgrund */
+      --light:     #D7BFA8;  /* Sand — kort-bakgrund, borders */
+      --gray:      #7A8899;  /* Neutral grå — subtexter */
+      --white:     #FFFFFF;  /* Vit — kortytor */
       --shadow-sm: rgba(0,0,0,0.06);
       --shadow-md: rgba(0,0,0,0.10);
       --header-dim: rgba(255,255,255,0.15);
@@ -42,7 +42,7 @@
     .btn-row { display: flex; gap: 10px; }
     .btn-row .btn { flex: 1; }
     .question-text { font-size: 19px; font-weight: 700; color: var(--dark); text-align: center; line-height: 1.4; }
-    .score-big { font-size: 56px; font-weight: 800; color: var(--accent); text-align: center; }
+    .score-big { font-size: 56px; font-weight: 800; color: var(--dark); text-align: center; }
     .slider-wrap { display: flex; align-items: center; gap: 10px; }
     .slider-wrap span { font-size: 11px; color: var(--gray); min-width: 50px; text-align: center; }
     input[type="range"] { flex: 1; accent-color: var(--accent); height: 6px; cursor: pointer; }
