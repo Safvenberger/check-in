@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -102,9 +103,9 @@
       <div class="question-text" id="question-text"></div>
       <div class="score-big" id="score-display">50</div>
       <div class="slider-wrap">
-        <span>Inte alls</span>
+        <span id="slider-left">Inte alls</span>
         <input type="range" min="0" max="100" value="50" id="slider" oninput="updateSlider(this.value)" />
-        <span>Absolut</span>
+        <span id="slider-right">Absolut</span>
       </div>
       <div class="btn-row">
         <button class="btn btn-secondary" id="btn-prev" onclick="prevQ()">← Tillbaka</button>
@@ -158,22 +159,24 @@
   const TABLE = 'quiz_results';
   // ───────────────────────────────────────────────────────────────────
 
-  const QUESTIONS = [
-    "Jag föredrar att jobba ensam framför i grupp",
-    "Jag trivs bäst med tydliga regler och struktur",
-    "Jag tar gärna på mig ledarrollen i ett team",
-    "Jag är mer kreativ än analytisk",
-    "Jag jobbar bäst under press",
-    "Jag delar gärna med mig av mina idéer högt i ett möte",
-    "Jag prioriterar harmoni framför att ha rätt",
+ const QUESTIONS = [
+    { text: "Hur taggad var du på Melodifestivalen i år?",                                            left: "Jag inser knappt att det pågår",     right: "Jag bokar lördagskvällen som om det vore VM‑final"    },
+    { text: "Hur mycket “schlager” är du i själ och hjärta?",                                         left: "Hårdrock / techno / allt utom schlager",  right: "Krona på huvudet och glitter i blodomloppet"   },
+    { text: "Hur sannolikt är det att du röstar i Mello?",                                            left: "Aldrig i livet",     right: " Ringer, SMS:ar och app‑klickar som om jag fick provision"    },
+    { text: "Hur stor är chansen att du kan hela refrängen till en Mello‑låtfrån de senaste 3 åren?", left: "Ingen chans alls",  right: "Jag skulle kunna ersätta artisten live"   },
+    { text: "Hur mycket påverkar scenkläder och glitter ditt betyg på ett bidrag?",                   left: "Inte alls", right: "Outfiten avgör allt – låten är sekundär"   },
+    { text: "Hur mycket drama vill du ha i Mellosändningen?",                                         left: "Inga känslostormar tack",   right: "Maximalt – ge mig tårar, rivalitet och tabloidrubriker"     },
+    { text: "Hur gärna skulle du själv vilja stå på Mello‑scenen?",                                   left: "Jag gömmer mig när folk fyller år och börjar sjunga",   right: "Sätter mig på turné så fort ni säger var casting är"   },
   ];
 
   const PERSONALITIES = [
-    { max: 140, emoji: "🦉", title: "Den stille analytikern", desc: "Du tänker innan du talar, jobbar bäst i lugn och ro och ser detaljer andra missar. Ovärderlig när det gäller att fatta välgrundade beslut." },
-    { max: 280, emoji: "🐢", title: "Den trygga stabiliteten", desc: "Du är pålitlig, metodisk och föredrar tydliga ramar. Kollegorna vet att de alltid kan luta sig mot dig — du levererar varje gång." },
-    { max: 420, emoji: "🦊", title: "Den smarte balansakten", desc: "Du rör dig bekvämt mellan analys och kreativitet, solo och grupp. Du anpassar dig efter situationen och är svår att sätta i ett fack." },
-    { max: 560, emoji: "🦁", title: "Den naturliga ledaren", desc: "Du tar gärna plats, driver på och inspirerar andra. Du trivs i högt tempo och är ofta den som sätter agendan i rummet." },
-    { max: 700, emoji: "🚀", title: "Energibomben", desc: "Du är alltid på, älskar utmaningar och räds inte att ta plats. Ditt driv smittar av sig — men kom ihåg att ladda om ibland!" },
+    { max: 100, emoji: "😤", title: "Melodifestivalförnekaren", desc: "'Är det detta jag betalar skatt för?'" },
+    { max: 200, emoji: "🙄", title: "Oundviklig tittaren", desc: "Du råkar alltid se finalen ändå — 'för att det inte finns något annat på TV'" },
+    { max: 300, emoji: "🛋️", title: "Soffexperten", desc: "Du tittar men hejar på fel låt varje år och förstår inte varför Sverige inte lyssnar" },
+    { max: 400, emoji: "🎤", title: "Hummaren", desc: "Du nynnar på Diggiloo Diggiley i hissen och låtsas att du inte kan texten" },
+    { max: 500, emoji: "🎵", title: "Schemaläggaren", desc: "Lördagar i feb/mars är bokade i kalendern. Det är bara så" },
+    { max: 600, emoji: "🤓", title: "Deltävlingsnörden", desc: "Du har åsikter om varje deltävling, varje koreografi, varje outfitvval och varför Måns är med i år igen" },
+    { max: 700, emoji: "🐦‍🔥", title: "Mellofanatikern", desc: "Du lever och andas Mello och har Edward af Sillén på speed-dial" },
   ];
 
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -203,9 +206,12 @@
   function renderQ() {
     document.getElementById('q-counter').textContent = `Fråga ${current + 1} av ${QUESTIONS.length}`;
     document.getElementById('q-header').textContent = 'Quiz';
-    document.getElementById('question-text').textContent = QUESTIONS[current];
+    const q = QUESTIONS[current];
+    document.getElementById('question-text').textContent = q.text;
     document.getElementById('slider').value = answers[current];
     document.getElementById('score-display').textContent = answers[current];
+    document.getElementById('slider-left').textContent = q.left;
+    document.getElementById('slider-right').textContent = q.right;
     document.getElementById('btn-prev').disabled = current === 0;
     document.getElementById('btn-next').textContent = current === QUESTIONS.length - 1 ? 'Klar! 🎉' : 'Nästa →';
     const bars = document.getElementById('progress-bar').children;
@@ -231,10 +237,10 @@
     document.getElementById('p-emoji').textContent = p.emoji;
     document.getElementById('p-title').textContent = p.title;
     document.getElementById('p-desc').textContent = p.desc;
-    const bd = document.getElementById('breakdown');
+          const bd = document.getElementById('breakdown');
     bd.innerHTML = QUESTIONS.map((q, i) => `
       <div class="breakdown-row">
-        <label>${q} <span>${answers[i]}p</span></label>
+        <label>${q.text} <span>${answers[i]}p</span></label>
         <div class="bar-bg"><div class="bar-fill" style="width:${answers[i]}%"></div></div>
       </div>`).join('');
     show('screen-result');
