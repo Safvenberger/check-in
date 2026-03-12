@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Svedea Quiz</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #F4F6FB; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
+    .app { width: 100%; max-width: 480px; min-height: 100vh; background: #F4F6FB; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    .header { background: #1B3A6B; color: white; padding: 20px; text-align: center; }
+    .header h1 { font-size: 20px; font-weight: 800; }
+    .header p { font-size: 12px; color: #8A9BBE; margin-top: 4px; }
+    .progress-bar { display: flex; gap: 4px; margin-top: 12px; }
+    .progress-bar div { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2); transition: background 0.3s; }
+    .progress-bar div.done { background: #E8A020; }
+
+    /* SCREENS */
+    .screen { flex: 1; padding: 28px 20px; display: flex; flex-direction: column; gap: 20px; }
+    .hidden { display: none !important; }
+
+    /* NAME SCREEN */
+    .logo { font-size: 52px; text-align: center; }
+    .title { font-size: 24px; font-weight: 800; color: #1B3A6B; text-align: center; }
+    .subtitle { font-size: 14px; color: #8A9BBE; text-align: center; line-height: 1.5; }
+    input[type="text"] { width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #E0E7F0; font-size: 16px; outline: none; background: white; color: #1B3A6B; }
+    input[type="text"]:focus { border-color: #1B3A6B; }
+
+    /* BUTTONS */
+    .btn { width: 100%; padding: 15px; background: #1B3A6B; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { background: #E0E7F0; color: #1B3A6B; }
+    .btn-gold { background: #E8A020; }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+
+    /* QUIZ SCREEN */
+    .question-text { font-size: 19px; font-weight: 700; color: #1B3A6B; text-align: center; line-height: 1.4; }
+    .score-big { font-size: 56px; font-weight: 800; color: #E8A020; text-align: center; }
+    .slider-wrap { display: flex; align-items: center; gap: 10px; }
+    .slider-wrap span { font-size: 11px; color: #8A9BBE; min-width: 50px; text-align: center; }
+    input[type="range"] { flex: 1; accent-color: #1B3A6B; height: 6px; cursor: pointer; }
+
+    /* RESULT SCREEN */
+    .personality-card { background: white; border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .personality-emoji { font-size: 56px; margin-bottom: 8px; }
+    .personality-title { font-size: 20px; font-weight: 800; color: #1B3A6B; margin-bottom: 10px; }
+    .personality-desc { font-size: 13px; color: #555; line-height: 1.6; }
+    .breakdown { display: flex; flex-direction: column; gap: 10px; }
+    .breakdown-row label { font-size: 11px; color: #1B3A6B; display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .breakdown-row label span { color: #E8A020; font-weight: 700; }
+    .bar-bg { height: 6px; background: #E0E7F0; border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #1B3A6B; border-radius: 3px; transition: width 0.5s; }
+
+    /* LEADERBOARD */
+    .lb-list { display: flex; flex-direction: column; gap: 10px; }
+    .lb-card { background: white; border-radius: 14px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 2px solid transparent; }
+    .lb-card.first { border-color: #E8A020; box-shadow: 0 4px 16px rgba(232,160,32,0.2); }
+    .lb-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .lb-medal { font-size: 22px; min-width: 28px; }
+    .lb-rank { font-size: 13px; font-weight: 700; color: #8A9BBE; min-width: 28px; }
+    .lb-avatar { width: 38px; height: 38px; border-radius: 50%; background: #1B3A6B; color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .lb-name { flex: 1; font-size: 14px; font-weight: 700; color: #1B3A6B; }
+    .lb-score { font-size: 18px; font-weight: 800; color: #E8A020; }
+
+    .refresh-row { display: flex; justify-content: space-between; align-items: center; }
+    .refresh-row h2 { font-size: 16px; font-weight: 700; color: #1B3A6B; }
+    .btn-refresh { padding: 8px 14px; background: #E0E7F0; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; color: #1B3A6B; cursor: pointer; }
+    .nav-tabs { display: flex; background: white; border-top: 1px solid #E0E7F0; }
+    .nav-tab { flex: 1; padding: 14px; text-align: center; font-size: 12px; font-weight: 700; color: #8A9BBE; cursor: pointer; border: none; background: none; }
+    .nav-tab.active { color: #1B3A6B; border-top: 2px solid #1B3A6B; }
+    .total-score { font-size: 13px; color: #8A9BBE; text-align: center; margin-top: -10px; }
+    .empty { text-align: center; color: #8A9BBE; font-size: 14px; padding: 40px 0; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- NAME SCREEN -->
+  <div id="screen-name" class="screen" style="justify-content: center;">
+    <div class="logo">🎯</div>
+    <div class="title">Svedea Quiz</div>
+    <div class="subtitle">Svara på 7 påståenden med en slider.<br>Ditt svar = dina poäng!</div>
+    <input type="text" id="input-name" placeholder="Ange ditt namn..." />
+    <button class="btn" id="btn-start" disabled onclick="startQuiz()">Starta →</button>
+    <button class="btn btn-secondary" onclick="showLeaderboard()">Se leaderboard 🏆</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="screen-quiz" class="hidden">
+    <div class="header">
+      <p id="q-counter">Fråga 1 av 7</p>
+      <h1 id="q-header">Quiz</h1>
+      <div class="progress-bar" id="progress-bar">
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>
+    </div>
+    <div class="screen">
+      <div class="question-text" id="question-text"></div>
+      <div class="score-big" id="score-display">50</div>
+      <div class="slider-wrap">
+        <span>Inte alls</span>
+        <input type="range" min="0" max="100" value="50" id="slider" oninput="updateSlider(this.value)" />
+        <span>Absolut</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-prev" onclick="prevQ()">← Tillbaka</button>
+        <button class="btn" id="btn-next" onclick="nextQ()">Nästa →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="screen-result" class="hidden">
+    <div class="header">
+      <h1>Ditt resultat 🎉</h1>
+      <p id="result-total-header"></p>
+    </div>
+    <div class="screen">
+      <div class="personality-card">
+        <div class="personality-emoji" id="p-emoji"></div>
+        <div class="personality-title" id="p-title"></div>
+        <div class="personality-desc" id="p-desc"></div>
+      </div>
+      <div class="breakdown" id="breakdown"></div>
+      <button class="btn btn-gold" onclick="showLeaderboard()">Se leaderboard 🏆</button>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD SCREEN -->
+  <div id="screen-leaderboard" class="hidden">
+    <div class="header">
+      <h1>🏆 Leaderboard</h1>
+      <p id="lb-subtitle">Laddar...</p>
+    </div>
+    <div class="screen">
+      <div class="refresh-row">
+        <h2 id="lb-count"></h2>
+        <button class="btn-refresh" onclick="loadLeaderboard()">🔄 Uppdatera</button>
+      </div>
+      <div class="lb-list" id="lb-list"></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="goHome()">← Hem</button>
+      <button class="nav-tab active">🏆 Leaderboard</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── KONFIGURERA HÄR ───────────────────────────────────────────────
+  const SUPABASE_URL = 'DIN_SUPABASE_URL';       // t.ex. https://xxxx.supabase.co
+  const SUPABASE_KEY = 'DIN_SUPABASE_ANON_KEY';  // din anon/public nyckel
+  const TABLE = 'quiz_results';
+  // ───────────────────────────────────────────────────────────────────
+
+  const QUESTIONS = [
+    "Jag föredrar att jobba ensam framför i grupp",
+    "Jag trivs bäst med tydliga regler och struktur",
+    "Jag tar gärna på mig ledarrollen i ett team",
+    "Jag är mer kreativ än analytisk",
+    "Jag jobbar bäst under press",
+    "Jag delar gärna med mig av mina idéer högt i ett möte",
+    "Jag prioriterar harmoni framför att ha rätt",
+  ];
+
+  const PERSONALITIES = [
+    { max: 140, emoji: "🦉", title: "Den stille analytikern", desc: "Du tänker innan du talar, jobbar bäst i lugn och ro och ser detaljer andra missar. Ovärderlig när det gäller att fatta välgrundade beslut." },
+    { max: 280, emoji: "🐢", title: "Den trygga stabiliteten", desc: "Du är pålitlig, metodisk och föredrar tydliga ramar. Kollegorna vet att de alltid kan luta sig mot dig — du levererar varje gång." },
+    { max: 420, emoji: "🦊", title: "Den smarte balansakten", desc: "Du rör dig bekvämt mellan analys och kreativitet, solo och grupp. Du anpassar dig efter situationen och är svår att sätta i ett fack." },
+    { max: 560, emoji: "🦁", title: "Den naturliga ledaren", desc: "Du tar gärna plats, driver på och inspirerar andra. Du trivs i högt tempo och är ofta den som sätter agendan i rummet." },
+    { max: 700, emoji: "🚀", title: "Energibomben", desc: "Du är alltid på, älskar utmaningar och räds inte att ta plats. Ditt driv smittar av sig — men kom ihåg att ladda om ibland!" },
+  ];
+
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let userName = '', answers = Array(QUESTIONS.length).fill(50), current = 0;
+
+  // Name input
+  document.getElementById('input-name').addEventListener('input', e => {
+    document.getElementById('btn-start').disabled = !e.target.value.trim();
+  });
+
+  function show(id) {
+    ['screen-name','screen-quiz','screen-result','screen-leaderboard'].forEach(s => {
+      document.getElementById(s).classList.toggle('hidden', s !== id);
+    });
+  }
+
+  function goHome() { show('screen-name'); }
+
+  function startQuiz() {
+    userName = document.getElementById('input-name').value.trim();
+    answers = Array(QUESTIONS.length).fill(50);
+    current = 0;
+    show('screen-quiz');
+    renderQ();
+  }
+
+  function renderQ() {
+    document.getElementById('q-counter').textContent = `Fråga ${current + 1} av ${QUESTIONS.length}`;
+    document.getElementById('q-header').textContent = 'Quiz';
+    document.getElementById('question-text').textContent = QUESTIONS[current];
+    document.getElementById('slider').value = answers[current];
+    document.getElementById('score-display').textContent = answers[current];
+    document.getElementById('btn-prev').disabled = current === 0;
+    document.getElementById('btn-next').textContent = current === QUESTIONS.length - 1 ? 'Klar! 🎉' : 'Nästa →';
+    const bars = document.getElementById('progress-bar').children;
+    for (let i = 0; i < bars.length; i++) bars[i].classList.toggle('done', i < current + 1);
+  }
+
+  function updateSlider(v) {
+    answers[current] = Number(v);
+    document.getElementById('score-display').textContent = v;
+  }
+
+  function nextQ() {
+    if (current < QUESTIONS.length - 1) { current++; renderQ(); }
+    else finishQuiz();
+  }
+
+  function prevQ() { if (current > 0) { current--; renderQ(); } }
+
+  async function finishQuiz() {
+    const total = answers.reduce((a, b) => a + b, 0);
+    const p = PERSONALITIES.find(p => total <= p.max) || PERSONALITIES[4];
+    document.getElementById('result-total-header').textContent = `${total} poäng av 700 möjliga`;
+    document.getElementById('p-emoji').textContent = p.emoji;
+    document.getElementById('p-title').textContent = p.title;
+    document.getElementById('p-desc').textContent = p.desc;
+    const bd = document.getElementById('breakdown');
+    bd.innerHTML = QUESTIONS.map((q, i) => `
+      <div class="breakdown-row">
+        <label>${q} <span>${answers[i]}p</span></label>
+        <div class="bar-bg"><div class="bar-fill" style="width:${answers[i]}%"></div></div>
+      </div>`).join('');
+    show('screen-result');
+    // Spara till Supabase
+    try {
+      await client.from(TABLE).insert([{
+        name: userName,
+        answers: answers,
+        total: total,
+        personality: p.title
+      }]);
+    } catch(e) { console.error('Supabase save failed:', e); }
+  }
+
+  async function loadLeaderboard() {
+    document.getElementById('lb-subtitle').textContent = 'Uppdaterar...';
+    document.getElementById('lb-list').innerHTML = '';
+    try {
+      const { data, error } = await client.from(TABLE).select('*').order('total', { ascending: false });
+      if (error) throw error;
+      document.getElementById('lb-subtitle').textContent = `${data.length} deltagare`;
+      document.getElementById('lb-count').textContent = `Ranking`;
+      const medals = ['🥇','🥈','🥉'];
+      const initials = n => n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+      document.getElementById('lb-list').innerHTML = data.length === 0
+        ? '<div class="empty">Inga resultat ännu 👀</div>'
+        : data.map((p, i) => `
+          <div class="lb-card ${i === 0 ? 'first' : ''}">
+            <div class="lb-top">
+              ${i < 3 ? `<div class="lb-medal">${medals[i]}</div>` : `<div class="lb-rank">${i+1}.</div>`}
+              <div class="lb-avatar">${initials(p.name)}</div>
+              <div class="lb-name">${p.name}<br><small style="font-weight:400;color:#8A9BBE">${p.personality || ''}</small></div>
+              <div class="lb-score">${p.total}p</div>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${(p.total/700)*100}%"></div></div>
+          </div>`).join('');
+    } catch(e) {
+      document.getElementById('lb-subtitle').textContent = 'Kunde inte ladda';
+      console.error(e);
+    }
+  }
+
+  function showLeaderboard() { show('screen-leaderboard'); loadLeaderboard(); }
+</script>
+</body>
+</html>
